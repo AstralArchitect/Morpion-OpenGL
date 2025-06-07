@@ -16,7 +16,7 @@ opengl_lib = cpp_dir + 'OpenGL_libs/'
 cpp_sources = [cpp_dir + 'main.cpp', cpp_dir + 'render.cpp']
 opengl_libs_sources = [opengl_lib + 'glad.c']
 personnal_cpp_sources = [cpp_dir + 'callbacks.cpp']
-tools_sources = [tools_dir + 'camera.cpp', tools_dir + 'shader.cpp', tools_dir + 'gltfloader.cpp', tools_dir + 'object.cpp']
+tools_sources = [tools_dir + 'camera.cpp', tools_dir + 'shader.cpp', tools_dir + 'gltfloader.cpp']
 
 sources = [cpp_sources, opengl_libs_sources, personnal_cpp_sources, tools_sources]
 include_dir = include_directories('Include')

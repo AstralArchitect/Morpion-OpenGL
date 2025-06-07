@@ -1,4 +1,3 @@
-#include <tools/object.hpp>
 #include <tools/gltfloader.hpp>
 
 #include <iostream>

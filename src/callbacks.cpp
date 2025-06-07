@@ -125,6 +125,12 @@ void Callback::mouse(GLFWwindow * window, double xposIn, double yposIn) {
     camera.ProcessMouseMovement(xoffset, yoffset, 1);
 }
 
+void mouse_enter(GLFWwindow * window, int entered)
+{
+    glfwGetCursorPos(window, &lastX, &lastY);
+    // TODO : click logic
+}
+
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
 void Callback::framebuffer_size(GLFWwindow* window, int width, int height)
@@ -166,6 +172,7 @@ GLFWwindow *createContextAndWindows(const unsigned int SCR_WIDTH, const unsigned
     glfwSetFramebufferSizeCallback(window, Callback::framebuffer_size);
     glfwSetScrollCallback(window, Callback::scroll);
     glfwSetCursorPosCallback(window, Callback::mouse);
+    glfwSetCursorEnterCallback(window, Callback::mouse_enter);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glad: load all OpenGL function pointers

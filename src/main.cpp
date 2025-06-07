@@ -8,17 +8,11 @@
 #include <tools/camera.hpp>
 #include <tools/shader.hpp>
 #include <tools/gltfloader.hpp>
-#include <tools/object.hpp>
 
 #include "callbacks.hpp"
 #include "render.hpp"
 
 #include <cstdio>
-
-struct Light {
-    glm::vec3 position;
-    int strength;
-};
 
 // settings
 unsigned int SCR_WIDTH  = 1920;

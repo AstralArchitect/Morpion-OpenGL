@@ -6,7 +6,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <tools/camera.hpp>
-#include <tools/object.hpp>
 
 #include "render.hpp"
 
@@ -39,7 +38,7 @@ void Render::renderFrame(GLFWwindow *window, std::vector<GltfModel> &models, glm
 
     // uniforms
     // -------
-    horloge.set_global_uniforms([&] (Shader* shader) {
+    models[0].set_global_uniforms([&] (Shader* shader) {
         shader->use();
         shader->setVec3("viewPos", camera.Position);
         shader->setVec3("lightPos", lightPos);
@@ -49,10 +48,11 @@ void Render::renderFrame(GLFWwindow *window, std::vector<GltfModel> &models, glm
 
     // draw
     // ----
-    horloge.draw();
+    for (auto &model : models)
+        model.draw();
 }
 
 void Render::renderScene(GLFWwindow *window, std::vector<GltfModel> &models, glm::mat4 const& lightSpaceMatrix)
 {
-    //
+    
 }
