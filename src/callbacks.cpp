@@ -125,7 +125,7 @@ void Callback::mouse(GLFWwindow * window, double xposIn, double yposIn) {
     camera.ProcessMouseMovement(xoffset, yoffset, 1);
 }
 
-void mouse_enter(GLFWwindow * window, int entered)
+void Callback::mouse_enter(GLFWwindow * window, int entered)
 {
     glfwGetCursorPos(window, &lastX, &lastY);
     // TODO : click logic

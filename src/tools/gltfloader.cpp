@@ -38,9 +38,15 @@ GltfModel::GltfModel(const std::string& filename, ShaderStore& shader_store) {
     }
 }
 
-void GltfModel::draw(bool depth, glm::mat4 const& lightSpaceMatrix) const {
+void GltfModel::draw(glm::mat4 const& lightSpaceMatrix) const {
     for (const auto& child: children) {
-        child.draw(depth, lightSpaceMatrix);
+        child.draw(lightSpaceMatrix);
+    }
+}
+
+void GltfModel::draw(bool no_shader) const {
+    for (const auto& child: children) {
+        child.draw(no_shader);
     }
 }
 
@@ -110,13 +116,23 @@ GltfNode::GltfNode(tinygltf::Model& root, tinygltf::Node node, ShaderStore& shad
     }
 }
 
-void GltfNode::draw(bool depth, glm::mat4 const& lightSpaceMatrix) const {
+void GltfNode::draw(glm::mat4 const& lightSpaceMatrix) const {
     for (const auto& child: children) {
-        child.draw(depth, lightSpaceMatrix);
+        child.draw(lightSpaceMatrix);
     }
 
     if (mesh.has_value()) {
-        mesh.value().draw(node_transform, depth, lightSpaceMatrix);
+        mesh.value().draw(node_transform, lightSpaceMatrix);
+    }
+}
+
+void GltfNode::draw(bool no_shader) const {
+    for (const auto& child: children) {
+        child.draw(no_shader);
+    }
+
+    if (mesh.has_value()) {
+        mesh.value().draw(node_transform, no_shader);
     }
 }
 
@@ -189,9 +205,15 @@ void print_tuple(const std::tuple<T...> &tuple_to_print) {
     print_tuple_util(tuple_to_print, std::make_index_sequence<sizeof...(T)>());
 }
 
-void GltfMesh::draw(const mat4& node_transform, bool depth, glm::mat4 const& lightSpaceMatrix) const {
+void GltfMesh::draw(const mat4& node_transform, glm::mat4 const& lightSpaceMatrix) const {
     for (const auto& prim: primitives) {
-        prim.draw(node_transform, depth, lightSpaceMatrix);
+        prim.draw(node_transform, lightSpaceMatrix);
+    }
+}
+
+void GltfMesh::draw(const mat4& node_transform, bool no_shader) const {
+    for (const auto& prim: primitives) {
+        prim.draw(node_transform, no_shader);
     }
 }
 
@@ -346,10 +368,20 @@ GltfPrimitive::GltfPrimitive(tinygltf::Model& root, const tinygltf::Primitive& p
     vertex_count = indices_accessor.count;
 }
 
-void GltfPrimitive::draw(const mat4& node_transform, bool depth, glm::mat4 const& lightSpaceMatrix) const {
+void GltfPrimitive::draw(const mat4& node_transform, glm::mat4 const& lightSpaceMatrix) const {
     glBindVertexArray(vao);
 
-    material.activate(node_transform, depth, lightSpaceMatrix);
+    material.activate(node_transform, lightSpaceMatrix);
+
+    glDrawElements(draw_mode, vertex_count, GL_UNSIGNED_SHORT, static_cast<void*>(0));
+    glBindVertexArray(0);
+}
+
+void GltfPrimitive::draw(const mat4& node_transform, bool no_shader) const {
+    glBindVertexArray(vao);
+
+    if (!no_shader)
+        material.activate(node_transform);
 
     glDrawElements(draw_mode, vertex_count, GL_UNSIGNED_SHORT, static_cast<void*>(0));
     glBindVertexArray(0);
@@ -458,8 +490,8 @@ GltfMaterial::GltfMaterial(tinygltf::Model& root, tinygltf::Material material, S
     printf("Textures loaded !\n");
 }
 
-inline void GltfMaterial::activate(const mat4& node_transform, bool depth, glm::mat4 const& lightSpaceMatrix) const {
-    if (depth){
+inline void GltfMaterial::activate(const mat4& node_transform, glm::mat4 const& lightSpaceMatrix) const {
+    if (lightSpaceMatrix != glm::mat4(1.0f)){
         depth_shader->use();
         mat4 depth_transform = lightSpaceMatrix * node_transform * model_transform;
         depth_shader->setMat4("depth_transform", depth_transform);

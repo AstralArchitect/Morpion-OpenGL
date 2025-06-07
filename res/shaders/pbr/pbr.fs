@@ -28,8 +28,7 @@ uniform vec3 viewPos;
 
 uniform vec3 ambientColor;
 
-// if there's normals, calculate shadows with the bias, if no, without
-#ifdef HAS_NORMALS
+// shadow calculation function
 float ShadowCalculation(vec4 fragPosLightSpace, float bias) {
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -56,7 +55,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float bias) {
 
     return shadow;
 }
-#else
+
 float ShadowCalculation(vec4 fragPosLightSpace) {
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -83,9 +82,7 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
 
     return shadow;
 }
-#endif
 
-// main func
 void main() {
 #ifdef HAS_BASE_COLOR_TEX
     vec3 color = texture(tex, fs_in.TexCoords).rgb;
