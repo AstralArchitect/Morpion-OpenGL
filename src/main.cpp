@@ -60,39 +60,10 @@ int main()
     GltfModel plateau("./res/models/plateau.glb", shader_store);
     plateau.set_global_uniforms(glm::translate(glm::mat4(1.f), glm::vec3(0.0, -1, 0.0)));
 
-    // create the shader for the input map
-    Shader input_shader("./res/shaders/input/", "input.vs", "input.fs");
-    input_shader.use();
-    input_shader.setInt("text", 0);
-    unsigned int input_text = loadTexture("./res/textures/input.jpg", false, GL_CLAMP_TO_EDGE);
-
     // shadows
     // -------
     Callback::Shadow_info shadow_info = {2048, 2048, 0, 0}; 
     shadow_info.init();
-
-    // input framebuffer
-    // -----------------
-    GLuint inputMapFBO;
-    GLuint inputMap;
-    glGenFramebuffers(1, &inputMapFBO);
-    // create input texture
-    glGenTextures(1, &inputMap);
-    glBindTexture(GL_TEXTURE_2D, inputMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-    // attach depth texture as FBO's input buffer
-    glBindFramebuffer(GL_FRAMEBUFFER, inputMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, inputMap, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // create a render list which will be past as arg to the render func
     std::vector<GltfModel> renderList;
@@ -140,14 +111,7 @@ int main()
 
         // 2. render scene as normal using the generated depth/shadow map  
         // --------------------------------------------------------------
-        //Render::renderFrame(window, renderList, lightSpaceMatrix, shadow_info.depthMap);
-
-        // 3. render to the input framebuffer
-        // ----------------------------------
-        //glBindFramebuffer(GL_FRAMEBUFFER, inputMapFBO);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            Render::renderInputFrame(window, plateau, input_shader);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        Render::renderFrame(window, renderList, lightSpaceMatrix, shadow_info.depthMap);
 
         GLenum err = 1;
         while (err != 0) {

@@ -53,19 +53,6 @@ void Render::renderFrame(GLFWwindow *window, std::vector<GltfModel> &models, glm
         model.draw();
 }
 
-void Render::renderInputFrame(GLFWwindow *window, GltfModel &plateau, Shader &input_shader) {
-    // view/projection/world transformations
-    // -------------------------------
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(0.0, sin(glfwGetTime()), 0.0));
-    
-    input_shader.use();
-    input_shader.setMat4("transform", projection * view * model);
-
-    plateau.draw(true);
-}
-
 void Render::renderDepthFrame(GLFWwindow *window, std::vector<GltfModel> &models, glm::mat4 const& lightSpaceMatrix)
 {
     for(auto &model : models)
