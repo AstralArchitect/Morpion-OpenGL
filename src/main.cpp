@@ -79,6 +79,14 @@ int main()
     // rond
     GltfModel rond("./res/models/rond.glb", shader_store);
     loadedModels.push_back(rond);
+    // uniforms
+    for (auto &model : loadedModels)
+        model.set_global_uniforms([&] (Shader* shader) {
+            shader->use();
+            shader->setVec3("lightPos", lightPos);
+            shader->setVec3("ambientColor", backgroundColor);
+            shader->setInt("shadowMap", 4);
+        });
 
     // add plateau to render list render list
     renderList.push_back(plateau);

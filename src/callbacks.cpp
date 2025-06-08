@@ -135,72 +135,76 @@ void Callback::mouse(GLFWwindow * window, double xposIn, double yposIn) {
 }
 
 void Callback::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    // Nous voulons seulement réagir à un clic gauche (bouton 0)
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-        // Nous voulons seulement réagir à un clic gauche (bouton 0)
-        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-        {
-            glfwGetCursorPos(window, &lastX, &lastY); // Obtenir la position actuelle du curseur
+        glfwGetCursorPos(window, &lastX, &lastY); // Obtenir la position actuelle du curseur
 
-            float screenX = static_cast<float>(lastX);
-            float screenY = static_cast<float>(SCR_HEIGHT - lastY - 1); // Inverser l'axe Y
+        float screenX = static_cast<float>(lastX);
+        float screenY = static_cast<float>(SCR_HEIGHT - lastY - 1); // Inverser l'axe Y
 
-            glm::vec3 ndc_near(
-                (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
-                (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
-                -1.0f // Z pour le plan proche
-            );
+        glm::vec3 ndc_near(
+            (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
+            (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
+            -1.0f // Z pour le plan proche
+        );
 
-            glm::vec3 ndc_far(
-                (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
-                (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
-                1.0f // Z pour le plan lointain
-            );
+        glm::vec3 ndc_far(
+            (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
+            (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
+            1.0f // Z pour le plan lointain
+        );
 
-            glm::mat4 inverseProjView = glm::inverse(projection * view);
+        glm::mat4 inverseProjView = glm::inverse(projection * view);
 
-            glm::vec4 ray_clip_near = glm::vec4(ndc_near.x, ndc_near.y, ndc_near.z, 1.0f);
-            glm::vec4 ray_world_near = inverseProjView * ray_clip_near;
-            ray_world_near /= ray_world_near.w;
+        glm::vec4 ray_clip_near = glm::vec4(ndc_near.x, ndc_near.y, ndc_near.z, 1.0f);
+        glm::vec4 ray_world_near = inverseProjView * ray_clip_near;
+        ray_world_near /= ray_world_near.w;
 
-            glm::vec4 ray_clip_far = glm::vec4(ndc_far.x, ndc_far.y, ndc_far.z, 1.0f);
-            glm::vec4 ray_world_far = inverseProjView * ray_clip_far;
-            ray_world_far /= ray_world_far.w;
+        glm::vec4 ray_clip_far = glm::vec4(ndc_far.x, ndc_far.y, ndc_far.z, 1.0f);
+        glm::vec4 ray_world_far = inverseProjView * ray_clip_far;
+        ray_world_far /= ray_world_far.w;
 
-            glm::vec3 ray_origin = glm::vec3(ray_world_near);
-            glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_world_far) - ray_origin);
+        glm::vec3 ray_origin = glm::vec3(ray_world_near);
+        glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_world_far) - ray_origin);
 
-            glm::vec3 plane_point = glm::vec3(0.0f, -1.0f, 0.0f);
-            glm::vec3 plane_normal = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 plane_point = glm::vec3(0.0f, -1.0f, 0.0f);
+        glm::vec3 plane_normal = glm::vec3(0.0f, 1.0f, 0.0f);
 
-            float denominator = glm::dot(ray_direction, plane_normal);
+        float denominator = glm::dot(ray_direction, plane_normal);
 
-            if (glm::abs(denominator) < 0.0001f) {
-                std::cout << "Le rayon est parallèle au plan ou ne l'intersecte pas." << std::endl;
-            } else {
-                float t = glm::dot(plane_point - ray_origin, plane_normal) / denominator;
-
-                if (t >= 0.0f) {
-                    glm::vec3 intersection_point = ray_origin + t * ray_direction;
-                    std::cout << "L'intersection se produit à la position : (" << intersection_point.x << ", " << intersection_point.y << ", " << intersection_point.z << ")" << std::endl;
-                    
-                    // create a copy of the model
-                    GltfModel model = renderList.size() % 2 == 0 ? loadedModels[1] : loadedModels[2];
-                    
-                    float posx_mat = (float)min((int)(abs(intersection_point.x) * 3), 1) * sign(intersection_point.x) + 1.0f;
-                    float posy_mat = (float)min((int)(abs(intersection_point.z) * 3), 1) * sign(intersection_point.z) + 1.0f;
-
-                    float posx_space = (posx_mat - 1.0f) * 2/3;
-                    float posy_space = (posy_mat - 1.0f) * 2/3;
-
-                    model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(posx_space, -1.0, posy_space)), glm::vec3(0.25)));
-                    renderList.push_back(model);
-                } else {
-                    std::cout << "L'intersection est derrière la caméra." << std::endl;
-                }
-            }
+        if (glm::abs(denominator) < 0.0001f) {
+            std::cout << "Le rayon est parallèle au plan ou ne l'intersecte pas." << std::endl;
+        } else {
+            float t = glm::dot(plane_point - ray_origin, plane_normal) / denominator;
             
+            if (t >= 0.0f) {
+                glm::vec3 intersection_point = ray_origin + t * ray_direction;
+                    
+                // create a copy of the model
+                GltfModel model = renderList.size() % 2 == 0 ? loadedModels[1] : loadedModels[2];
+                    
+                int posx_mat = (float)min((int)(abs(intersection_point.x) * 3), 1) * sign(intersection_point.x) + 1.0f;
+                int posy_mat = (float)min((int)(abs(intersection_point.z) * 3), 1) * sign(intersection_point.z) + 1.0f;
+
+                if (abs(intersection_point.x) > 1 || abs(intersection_point.z) > 1 || positionsMatrix[posx_mat][posy_mat] != 0) return;
+                else if (positionsMatrix[posx_mat][posy_mat] == 0) positionsMatrix[posx_mat][posy_mat] = renderList.size() % 2 == 0 ? 1 : 2;
+
+                float posx_space = (posx_mat - 1.0f) * 2/3;
+                float posy_space = (posy_mat - 1.0f) * 2/3;
+
+                model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(posx_space, -1.0, posy_space)), glm::vec3(0.25)));
+                renderList.push_back(model);
+            } else {
+                std::cout << "L'intersection est derrière la caméra." << std::endl;
+            }
         }
     }
+
+    // check if a line of 3 is reached
+    
+}
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
