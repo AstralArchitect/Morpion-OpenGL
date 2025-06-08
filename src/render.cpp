@@ -31,7 +31,10 @@ glm::mat4 projection;
 glm::mat4 view;
 glm::mat4 model;
 
-void Render::renderFrame(GLFWwindow *window, std::vector<GltfModel> &models, glm::mat4 lightSpaceMatrix, GLuint depthMap)
+// render list
+extern std::vector<GltfModel> renderList;
+
+void Render::renderFrame(GLFWwindow *window, glm::mat4 lightSpaceMatrix, GLuint depthMap)
 {
     // view/projection/world transformations
     // -------------------------------
@@ -43,22 +46,28 @@ void Render::renderFrame(GLFWwindow *window, std::vector<GltfModel> &models, glm
 
     // uniforms
     // -------
-    models[0].set_global_uniforms([&] (Shader* shader) {
-        shader->use();
-        shader->setVec3("viewPos", camera.Position);
-        shader->setVec3("lightPos", lightPos);
-        shader->setVec3("ambientColor", backgroundColor);
-        shader->setInt("shadowMap", 4);
-    }, view, projection);
+    for (auto &model : renderList)
+    {
+        model.set_global_uniforms([&] (Shader* shader) {
+            shader->use();
+            
+            shader->setVec3("viewPos", camera.Position);
+            shader->setVec3("lightPos", lightPos);
+            shader->setVec3("ambientColor", backgroundColor);
 
+            shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+            shader->setInt("shadowMap", 4);
+        }, view, projection);
+    }
+    
     // draw
     // ----
-    for (auto &model : models)
+    for (auto &model : renderList)
         model.draw();
 }
 
-void Render::renderDepthFrame(GLFWwindow *window, std::vector<GltfModel> &models, glm::mat4 const& lightSpaceMatrix)
+void Render::renderDepthFrame(GLFWwindow *window, glm::mat4 const& lightSpaceMatrix)
 {
-    for(auto &model : models)
+    for(auto &model : renderList)
         model.draw(lightSpaceMatrix);
 }

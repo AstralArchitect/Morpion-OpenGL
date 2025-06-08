@@ -21,7 +21,7 @@ unsigned int SCR_WIDTH  = 800;
 unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 2.7f));
+Camera camera(glm::vec3(0.0f, 0.0f, 2.5f));
 
 // timing
 float deltaTime = 0.0f;
@@ -29,11 +29,15 @@ float lastFrame = 0.0f;
 
 // lighting info
 // -------------
-glm::vec3 lightPos(1.0/*cos(0)*/, 1.0, 0.0f/*sin(0)*/);
+glm::vec3 lightPos(1.0f, 1.0, 0.0f);
 glm::vec3 pointLightColor = glm::vec3(1.0f, 0.9f, 0.8f);
 
 // background strength
 glm::vec3 backgroundColor(.5f);
+
+// global render list and loaded models
+std::vector<GltfModel> renderList;
+std::vector<GltfModel> loadedModels;
 
 int main()
 {
@@ -54,19 +58,29 @@ int main()
         return -1;
     }
 
-    ShaderStore shader_store("./res/shaders/pbr");
-
-    // create the plateau model and set the model matrix
-    GltfModel plateau("./res/models/plateau.glb", shader_store);
-    plateau.set_global_uniforms(glm::translate(glm::mat4(1.f), glm::vec3(0.0, -1, 0.0)));
-
     // shadows
     // -------
     Callback::Shadow_info shadow_info = {2048, 2048, 0, 0}; 
     shadow_info.init();
 
-    // create a render list which will be past as arg to the render func
-    std::vector<GltfModel> renderList;
+    // shaders
+    // -------
+    ShaderStore shader_store("./res/shaders/pbr");
+
+    // models
+    // ------
+    // plateau
+    GltfModel plateau("./res/models/plateau.glb", shader_store);    
+    plateau.set_global_uniforms(glm::translate(glm::mat4(1.f), glm::vec3(0.0, -1, 0.0)));
+    loadedModels.push_back(plateau);
+    // croix
+    GltfModel croix("./res/models/croix.glb", shader_store);
+    loadedModels.push_back(croix);
+    // rond
+    GltfModel rond("./res/models/rond.glb", shader_store);
+    loadedModels.push_back(rond);
+
+    // add plateau to render list render list
     renderList.push_back(plateau);
     
     // render loop
@@ -101,7 +115,7 @@ int main()
         glBindFramebuffer(GL_FRAMEBUFFER, shadow_info.depthMapFBO);
             glClear(GL_DEPTH_BUFFER_BIT);
             glCullFace(GL_FRONT);
-            Render::renderDepthFrame(window, renderList, lightSpaceMatrix);
+            Render::renderDepthFrame(window, lightSpaceMatrix);
             glCullFace(GL_BACK);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -111,7 +125,7 @@ int main()
 
         // 2. render scene as normal using the generated depth/shadow map  
         // --------------------------------------------------------------
-        Render::renderFrame(window, renderList, lightSpaceMatrix, shadow_info.depthMap);
+        Render::renderFrame(window, lightSpaceMatrix, shadow_info.depthMap);
 
         GLenum err = 1;
         while (err != 0) {
