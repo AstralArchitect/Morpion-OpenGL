@@ -17,8 +17,8 @@
 #include <cstdio>
 
 // settings
-unsigned int SCR_WIDTH  = 1920;
-unsigned int SCR_HEIGHT = 1080;
+unsigned int SCR_WIDTH  = 800;
+unsigned int SCR_HEIGHT = 600;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 2.7f));

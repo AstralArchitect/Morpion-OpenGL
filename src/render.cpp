@@ -26,13 +26,17 @@ extern glm::vec3 pointLightColor;
 // background strength
 extern glm::vec3 backgroundColor;
 
+// model, view and projection matrix
+glm::mat4 projection;
+glm::mat4 view;
+glm::mat4 model;
+
 void Render::renderFrame(GLFWwindow *window, std::vector<GltfModel> &models, glm::mat4 lightSpaceMatrix, GLuint depthMap)
 {
     // view/projection/world transformations
     // -------------------------------
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 model;
+    projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    view = camera.GetViewMatrix();
 
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, depthMap);

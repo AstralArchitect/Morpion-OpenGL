@@ -12,7 +12,7 @@ namespace Callback {
     void framebuffer_size(GLFWwindow* window, int width, int height);
     void scroll(GLFWwindow* window, double xoffset, double yoffset);
     void mouse(GLFWwindow * window, double xposIn, double yposIn);
-    void mouse_enter(GLFWwindow * window, int entered);
+    void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
     void processInput(GLFWwindow *window);
 }
 unsigned int loadTexture(const char *path, bool gammaCorrection, GLuint mode = GL_MIRRORED_REPEAT);

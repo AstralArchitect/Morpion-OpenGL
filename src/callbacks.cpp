@@ -16,6 +16,12 @@ extern float deltaTime;
 
 extern unsigned int SCR_WIDTH;
 extern unsigned int SCR_HEIGHT;
+
+// model, view and projection matrix
+extern glm::mat4 projection;
+extern glm::mat4 view;
+extern glm::mat4 model;
+
 double lastX = SCR_WIDTH / 2.0;
 double lastY = SCR_HEIGHT / 2.0;
 bool firstMouse = true;
@@ -125,11 +131,62 @@ void Callback::mouse(GLFWwindow * window, double xposIn, double yposIn) {
     camera.ProcessMouseMovement(xoffset, yoffset, 1);
 }
 
-void Callback::mouse_enter(GLFWwindow * window, int entered)
-{
-    glfwGetCursorPos(window, &lastX, &lastY);
-    // TODO : click logic
-}
+void Callback::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+    {
+        // Nous voulons seulement réagir à un clic gauche (bouton 0)
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+        {
+            glfwGetCursorPos(window, &lastX, &lastY); // Obtenir la position actuelle du curseur
+
+            float screenX = static_cast<float>(lastX);
+            float screenY = static_cast<float>(SCR_HEIGHT - lastY - 1); // Inverser l'axe Y
+
+            glm::vec3 ndc_near(
+                (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
+                (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
+                -1.0f // Z pour le plan proche
+            );
+
+            glm::vec3 ndc_far(
+                (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
+                (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
+                1.0f // Z pour le plan lointain
+            );
+
+            glm::mat4 inverseProjView = glm::inverse(projection * view);
+
+            glm::vec4 ray_clip_near = glm::vec4(ndc_near.x, ndc_near.y, ndc_near.z, 1.0f);
+            glm::vec4 ray_world_near = inverseProjView * ray_clip_near;
+            ray_world_near /= ray_world_near.w;
+
+            glm::vec4 ray_clip_far = glm::vec4(ndc_far.x, ndc_far.y, ndc_far.z, 1.0f);
+            glm::vec4 ray_world_far = inverseProjView * ray_clip_far;
+            ray_world_far /= ray_world_far.w;
+
+            glm::vec3 ray_origin = glm::vec3(ray_world_near);
+            glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_world_far) - ray_origin);
+
+            glm::vec3 plane_point = glm::vec3(0.0f, -1.0f, 0.0f);
+            glm::vec3 plane_normal = glm::vec3(0.0f, 1.0f, 0.0f);
+
+            float denominator = glm::dot(ray_direction, plane_normal);
+
+            if (glm::abs(denominator) < 0.0001f) {
+                std::cout << "Le rayon est parallèle au plan ou ne l'intersecte pas." << std::endl;
+            } else {
+                float t = glm::dot(plane_point - ray_origin, plane_normal) / denominator;
+
+                if (t >= 0.0f) {
+                    glm::vec3 intersection_point = ray_origin + t * ray_direction;
+                    // TODO : click logic
+                    // ------------------
+                } else {
+                    std::cout << "L'intersection est derrière la caméra." << std::endl;
+                }
+            }
+            
+        }
+    }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
@@ -171,9 +228,9 @@ GLFWwindow *createContextAndWindows(const unsigned int SCR_WIDTH, const unsigned
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, Callback::framebuffer_size);
     glfwSetScrollCallback(window, Callback::scroll);
-    glfwSetCursorPosCallback(window, Callback::mouse);
-    glfwSetCursorEnterCallback(window, Callback::mouse_enter);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetCursorPosCallback(window, Callback::mouse);
+    glfwSetMouseButtonCallback(window, Callback::mouse_button_callback);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
