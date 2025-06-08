@@ -44,6 +44,8 @@ class GltfPrimitive {
         inline void set_primitive_uniforms(std::function<void(Shader*)>);
         inline void set_primitive_uniforms(const mat4& model_transform, const mat4& view_matrix, const mat4& projection_matrix);
         inline void set_primitive_uniforms(const mat4& model_transform);
+
+        glm::mat4 get_model_transform();
     
     private:
         GLuint vao;
@@ -64,6 +66,8 @@ class GltfMesh {
         inline void set_mesh_uniforms(const mat4& model_transform, const mat4& view_matrix, const mat4& projection_matrix);
         inline void set_mesh_uniforms(const mat4& model_transform);
 
+        glm::mat4 get_model_transform();
+
     private:
         std::vector<GltfPrimitive> primitives;
 };
@@ -79,6 +83,7 @@ class GltfNode {
         inline void set_node_uniforms(const mat4& model_transform, const mat4& view_matrix, const mat4& projection_matrix);
         inline void set_node_uniforms(const mat4& model_transform);
 
+        glm::mat4 get_model_transform();
     private:
         std::optional<GltfMesh> mesh;
         std::vector<GltfNode> children;
@@ -100,6 +105,8 @@ class GltfModel {
         void set_global_uniforms(std::function<void(Shader*)>);
         void set_global_uniforms(const mat4& model_transform, const mat4& view_matrix, const mat4& projection_matrix);
         void set_global_uniforms(const mat4& model_transform);
+
+        glm::mat4 get_model_transform();
     private:
         tinygltf::Model tiny_model;
         std::vector<GltfNode> children;

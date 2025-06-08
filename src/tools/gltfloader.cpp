@@ -82,6 +82,10 @@ void GltfModel::set_global_uniforms(const mat4& model_transform) {
     }
 }
 
+glm::mat4 GltfModel::get_model_transform() {
+    return children[0].get_model_transform();
+}
+
 GltfNode::GltfNode(tinygltf::Model& root, tinygltf::Node node, ShaderStore& shader_store, mat4 parent_node_transform) {
     node_transform = mat4(1.0);
     if (node.translation.size() == 3) {
@@ -186,6 +190,10 @@ inline void GltfNode::set_node_uniforms(const mat4& model_transform) {
     }
 }
 
+glm::mat4 GltfNode::get_model_transform() {
+    return children[0].get_model_transform();
+}
+
 GltfMesh::GltfMesh(tinygltf::Model& root, tinygltf::Mesh mesh, ShaderStore& shader_store, int emmission) {
     for (const auto& prim : mesh.primitives) {
         primitives.push_back(GltfPrimitive(root, prim, shader_store, emmission));
@@ -245,6 +253,10 @@ inline void GltfMesh::set_mesh_uniforms(const mat4& model_transform) {
     for (auto& prim: primitives) {
         prim.set_primitive_uniforms(model_transform);
     }
+}
+
+glm::mat4 GltfMesh::get_model_transform() {
+    return primitives[0].get_model_transform();
 }
 
 GltfPrimitive::GltfPrimitive(tinygltf::Model& root, const tinygltf::Primitive& prim, ShaderStore& shader_store, int emmission) {
@@ -405,6 +417,10 @@ inline void GltfPrimitive::set_primitive_uniforms(const mat4& model_transform, c
 
 inline void GltfPrimitive::set_primitive_uniforms(const mat4& model_transform) {
     material.set_material_uniforms(model_transform);
+}
+
+glm::mat4 GltfPrimitive::get_model_transform() {
+    return model_transform;
 }
 
 GLuint load_texture_to_gpu(tinygltf::Model& root, tinygltf::TextureInfo texinfo) {

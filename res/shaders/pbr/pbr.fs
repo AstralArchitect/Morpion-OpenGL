@@ -20,6 +20,8 @@ in VS_OUT {
 uniform sampler2D tex;
 #else
 uniform vec3 base_color;
+uniform vec3 override_color;
+uniform bool override;
 #endif
 
 uniform sampler2D shadowMap;

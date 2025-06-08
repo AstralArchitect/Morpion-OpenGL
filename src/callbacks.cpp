@@ -30,6 +30,13 @@ bool firstMouse = true;
 extern std::vector<GltfModel> renderList;
 extern std::vector<GltfModel> loadedModels;
 
+unsigned int positionsMatrix[3][3] = 
+{
+    {0, 0, 0},
+    {0, 0, 0},
+    {0, 0, 0}
+};
+
 #ifdef _WIN32
 #include <windows.h>
 
@@ -178,70 +185,15 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
                     
                     // create a copy of the model
                     GltfModel model = renderList.size() % 2 == 0 ? loadedModels[1] : loadedModels[2];
+                    
+                    float posx_mat = (float)min((int)(abs(intersection_point.x) * 3), 1) * sign(intersection_point.x) + 1.0f;
+                    float posy_mat = (float)min((int)(abs(intersection_point.z) * 3), 1) * sign(intersection_point.z) + 1.0f;
 
-                    // case 0; 0
-                    if (intersection_point.x >= -1.0f && intersection_point.x <= -.36f && intersection_point.z >= -1.0f && intersection_point.z <= -.36f)
-                    {
-                        std::cout << "case 0; 0" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(-.7, -1.0, -.7)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
-                    // case 1; 0
-                    if (intersection_point.x >= -.32f && intersection_point.x <= .32f && intersection_point.z >= -1.0f && intersection_point.z <= -.36f)
-                    {
-                        std::cout << "case 1; 0" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(0.0, -1.0, -.7)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
-                    // case 2; 0
-                    if (intersection_point.x >= .36f && intersection_point.x <= 1.0f && intersection_point.z >= -1.0f && intersection_point.z <= -.36f)
-                    {
-                        std::cout << "case 2; 0" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(.7, -1.0, -.7)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
-                    // case 0; 1
-                    if (intersection_point.x >= -1.0f && intersection_point.x <= -.36f && intersection_point.z >= -.32f && intersection_point.z <= .32f)
-                    {
-                        std::cout << "case 0; 1" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(-.7, -1.0, .0)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
-                    // case 1; 1
-                    if (intersection_point.x >= -.32f && intersection_point.x <= .32f && intersection_point.z >= -.32f && intersection_point.z <= .32f)
-                    {
-                        std::cout << "case 1; 1" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(0.0, -1, 0.0)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
-                    // case 2; 1
-                    if (intersection_point.x >= .36f && intersection_point.x <= 1.0f && intersection_point.z >= -.32f && intersection_point.z <= .32f)
-                    {
-                        std::cout << "case 2; 1" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(.7, -1.0, .0)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
-                    // case 0; 2
-                    if (intersection_point.x >= -1.0f && intersection_point.x <= -.36f && intersection_point.z >= .36f && intersection_point.z <= 1.0f)
-                    {
-                        std::cout << "case 0; 2" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(-.7, -1.0, .7)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
-                    // case 1; 2
-                    if (intersection_point.x >= -.36f && intersection_point.x <= .36f && intersection_point.z >= .36f && intersection_point.z <= 1.0f)
-                    {
-                        std::cout << "case 1; 2" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(0.0, -1.0, .7)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
-                    // case 2; 2
-                    if (intersection_point.x >= .36f && intersection_point.x <= 1.0f && intersection_point.z >= .36f && intersection_point.z <= 1.0f)
-                    {
-                        std::cout << "case 2; 2" << std::endl;
-                        model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(.7, -1.0, .7)), glm::vec3(0.25)));
-                        renderList.push_back(model);
-                    }
+                    float posx_space = (posx_mat - 1.0f) * 2/3;
+                    float posy_space = (posy_mat - 1.0f) * 2/3;
+
+                    model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(posx_space, -1.0, posy_space)), glm::vec3(0.25)));
+                    renderList.push_back(model);
                 } else {
                     std::cout << "L'intersection est derrière la caméra." << std::endl;
                 }
