@@ -27,6 +27,7 @@ double lastY = SCR_HEIGHT / 2.0;
 bool firstMouse = true;
 
 // render and models lists
+std::vector<int> types = {0};
 extern std::vector<GltfModel> renderList;
 extern std::vector<GltfModel> loadedModels;
 
@@ -134,6 +135,28 @@ void Callback::mouse(GLFWwindow * window, double xposIn, double yposIn) {
     camera.ProcessMouseMovement(xoffset, yoffset, 1);
 }
 
+void won(std::vector<std::pair<int, int>> pos, int winner)
+{
+    for (int i = 1; i < renderList.size(); ++i)
+    {
+        if(types[i] == winner) renderList[i].set_global_uniforms([&] (Shader* shader) {
+            shader->use();
+            shader->setInt("override", true);
+            shader->setVec3("override_color", glm::vec3(.0f, 1.0f, 0.0f));
+        });
+    }
+    sleep_ms(1000);
+    renderList.clear();
+    renderList.push_back(loadedModels[0]);
+    types.clear();
+    types.push_back(0);
+    memset(positionsMatrix, 0, sizeof(positionsMatrix));
+    renderList[0].set_global_uniforms([&] (Shader* shader) {
+        shader->use();
+        shader->setInt("override", false);
+    });
+}
+
 void Callback::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     // Nous voulons seulement réagir à un clic gauche (bouton 0)
@@ -196,6 +219,7 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
 
                 model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(posx_space, -1.0, posy_space)), glm::vec3(0.25)));
                 renderList.push_back(model);
+                types.push_back(renderList.size() % 2 == 0 ? 1 : 2);
             } else {
                 std::cout << "L'intersection est derrière la caméra." << std::endl;
             }
@@ -203,7 +227,28 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
     }
 
     // check if a line of 3 is reached
-    
+    for (int i = 0; i < 3; ++i) {
+        // Check rows
+        if (positionsMatrix[i][0] != 0 && positionsMatrix[i][0] == positionsMatrix[i][1] && positionsMatrix[i][1] == positionsMatrix[i][2]) {
+            std::cout << "Player " << positionsMatrix[i][0] << " wins!" << std::endl;
+            won({{i, 0}, {i, 1}, {i, 2}}, positionsMatrix[i][0]);
+        }
+        // Check columns
+        if (positionsMatrix[0][i] != 0 && positionsMatrix[0][i] == positionsMatrix[1][i] && positionsMatrix[1][i] == positionsMatrix[2][i]) {
+            std::cout << "Player " << positionsMatrix[0][i] << " wins!" << std::endl;
+            won({{0, i}, {1, i}, {2, i}}, positionsMatrix[0][i]);
+        }
+    }
+
+    // Check diagonals
+    if (positionsMatrix[0][0] != 0 && positionsMatrix[0][0] == positionsMatrix[1][1] && positionsMatrix[1][1] == positionsMatrix[2][2]) {
+        std::cout << "Player " << positionsMatrix[0][0] << " wins!" << std::endl;
+        won({{0, 0}, {1, 1}, {2, 2}}, positionsMatrix[0][0]);
+    }
+    if (positionsMatrix[0][2] != 0 && positionsMatrix[0][2] == positionsMatrix[1][1] && positionsMatrix[1][1] == positionsMatrix[2][0]) {
+        std::cout << "Player " << positionsMatrix[0][2] << " wins!" << std::endl;
+        won({{0, 2}, {1, 1}, {2, 0}}, positionsMatrix[0][2]);
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
