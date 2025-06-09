@@ -89,7 +89,7 @@ void main() {
 #ifdef HAS_BASE_COLOR_TEX
     vec3 color = texture(tex, fs_in.TexCoords).rgb;
 #else
-    vec3 color = base_color;
+    vec3 color = override ? override_color : base_color;
 #endif
 
     // ambient

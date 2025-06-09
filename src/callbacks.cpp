@@ -181,13 +181,15 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
 
                 if (t >= 0.0f) {
                     glm::vec3 intersection_point = ray_origin + t * ray_direction;
-                    std::cout << "L'intersection se produit à la position : (" << intersection_point.x << ", " << intersection_point.y << ", " << intersection_point.z << ")" << std::endl;
                     
                     // create a copy of the model
                     GltfModel model = renderList.size() % 2 == 0 ? loadedModels[1] : loadedModels[2];
                     
-                    float posx_mat = (float)min((int)(abs(intersection_point.x) * 3), 1) * sign(intersection_point.x) + 1.0f;
-                    float posy_mat = (float)min((int)(abs(intersection_point.z) * 3), 1) * sign(intersection_point.z) + 1.0f;
+                    int posx_mat = (float)((float)min((int)(abs(intersection_point.x) * 3), 1) * sign(intersection_point.x)) + 1;
+                    int posy_mat = (float)((float)min((int)(abs(intersection_point.z) * 3), 1) * sign(intersection_point.z)) + 1;
+                    
+                    if(abs(intersection_point.x) > 1 || abs(intersection_point.z) > 1 || positionsMatrix[posx_mat][posy_mat] == true) return;
+                    else if (positionsMatrix[posx_mat][posy_mat] == false) positionsMatrix[posx_mat][posy_mat] = true; // set the position to placed
 
                     float posx_space = (posx_mat - 1.0f) * 2/3;
                     float posy_space = (posy_mat - 1.0f) * 2/3;
