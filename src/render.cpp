@@ -47,13 +47,11 @@ void Render::renderFrame(GLFWwindow *window, glm::mat4 lightSpaceMatrix, GLuint 
     // uniforms
     // -------
     for (auto &model : renderList)
-    {
         model.set_global_uniforms([&] (Shader* shader) {
             shader->use();
             shader->setVec3("viewPos", camera.Position);
             shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
         }, view, projection);
-    }
     
     // draw
     // ----

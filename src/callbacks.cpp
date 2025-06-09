@@ -27,6 +27,7 @@ double lastY = SCR_HEIGHT / 2.0;
 bool firstMouse = true;
 
 // render and models lists
+std::vector<int> types = {0};
 extern std::vector<GltfModel> renderList;
 extern std::vector<GltfModel> loadedModels;
 
@@ -134,56 +135,78 @@ void Callback::mouse(GLFWwindow * window, double xposIn, double yposIn) {
     camera.ProcessMouseMovement(xoffset, yoffset, 1);
 }
 
-void Callback::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+void won(std::vector<std::pair<int, int>> pos, int winner)
+{
+    for (int i = 1; i < renderList.size(); ++i)
     {
-        // Nous voulons seulement réagir à un clic gauche (bouton 0)
-        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-        {
-            glfwGetCursorPos(window, &lastX, &lastY); // Obtenir la position actuelle du curseur
+        if(types[i] == winner) renderList[i].set_global_uniforms([&] (Shader* shader) {
+            shader->use();
+            shader->setInt("override", true);
+            shader->setVec3("override_color", glm::vec3(.0f, 1.0f, 0.0f));
+        });
+    }
+    sleep_ms(1000);
+    renderList.clear();
+    renderList.push_back(loadedModels[0]);
+    types.clear();
+    types.push_back(0);
+    memset(positionsMatrix, 0, sizeof(positionsMatrix));
+    renderList[0].set_global_uniforms([&] (Shader* shader) {
+        shader->use();
+        shader->setInt("override", false);
+    });
+}
 
-            float screenX = static_cast<float>(lastX);
-            float screenY = static_cast<float>(SCR_HEIGHT - lastY - 1); // Inverser l'axe Y
+void Callback::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    // Nous voulons seulement réagir à un clic gauche (bouton 0)
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        glfwGetCursorPos(window, &lastX, &lastY); // Obtenir la position actuelle du curseur
 
-            glm::vec3 ndc_near(
-                (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
-                (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
-                -1.0f // Z pour le plan proche
-            );
+        float screenX = static_cast<float>(lastX);
+        float screenY = static_cast<float>(SCR_HEIGHT - lastY - 1); // Inverser l'axe Y
 
-            glm::vec3 ndc_far(
-                (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
-                (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
-                1.0f // Z pour le plan lointain
-            );
+        glm::vec3 ndc_near(
+            (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
+            (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
+            -1.0f // Z pour le plan proche
+        );
 
-            glm::mat4 inverseProjView = glm::inverse(projection * view);
+        glm::vec3 ndc_far(
+            (screenX / (float)SCR_WIDTH) * 2.0f - 1.0f,
+            (screenY / (float)SCR_HEIGHT) * 2.0f - 1.0f,
+            1.0f // Z pour le plan lointain
+        );
 
-            glm::vec4 ray_clip_near = glm::vec4(ndc_near.x, ndc_near.y, ndc_near.z, 1.0f);
-            glm::vec4 ray_world_near = inverseProjView * ray_clip_near;
-            ray_world_near /= ray_world_near.w;
+        glm::mat4 inverseProjView = glm::inverse(projection * view);
 
-            glm::vec4 ray_clip_far = glm::vec4(ndc_far.x, ndc_far.y, ndc_far.z, 1.0f);
-            glm::vec4 ray_world_far = inverseProjView * ray_clip_far;
-            ray_world_far /= ray_world_far.w;
+        glm::vec4 ray_clip_near = glm::vec4(ndc_near.x, ndc_near.y, ndc_near.z, 1.0f);
+        glm::vec4 ray_world_near = inverseProjView * ray_clip_near;
+        ray_world_near /= ray_world_near.w;
 
-            glm::vec3 ray_origin = glm::vec3(ray_world_near);
-            glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_world_far) - ray_origin);
+        glm::vec4 ray_clip_far = glm::vec4(ndc_far.x, ndc_far.y, ndc_far.z, 1.0f);
+        glm::vec4 ray_world_far = inverseProjView * ray_clip_far;
+        ray_world_far /= ray_world_far.w;
 
-            glm::vec3 plane_point = glm::vec3(0.0f, -1.0f, 0.0f);
-            glm::vec3 plane_normal = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 ray_origin = glm::vec3(ray_world_near);
+        glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_world_far) - ray_origin);
 
-            float denominator = glm::dot(ray_direction, plane_normal);
+        glm::vec3 plane_point = glm::vec3(0.0f, -1.0f, 0.0f);
+        glm::vec3 plane_normal = glm::vec3(0.0f, 1.0f, 0.0f);
 
-            if (glm::abs(denominator) < 0.0001f) {
-                std::cout << "Le rayon est parallèle au plan ou ne l'intersecte pas." << std::endl;
-            } else {
-                float t = glm::dot(plane_point - ray_origin, plane_normal) / denominator;
+        float denominator = glm::dot(ray_direction, plane_normal);
 
-                if (t >= 0.0f) {
-                    glm::vec3 intersection_point = ray_origin + t * ray_direction;
+        if (glm::abs(denominator) < 0.0001f) {
+            std::cout << "Le rayon est parallèle au plan ou ne l'intersecte pas." << std::endl;
+        } else {
+            float t = glm::dot(plane_point - ray_origin, plane_normal) / denominator;
+            
+            if (t >= 0.0f) {
+                glm::vec3 intersection_point = ray_origin + t * ray_direction;
                     
-                    // create a copy of the model
-                    GltfModel model = renderList.size() % 2 == 0 ? loadedModels[1] : loadedModels[2];
+                // create a copy of the model
+                GltfModel model = renderList.size() % 2 == 0 ? loadedModels[1] : loadedModels[2];
                     
                     int posx_mat = (float)((float)min((int)(abs(intersection_point.x) * 3), 1) * sign(intersection_point.x)) + 1;
                     int posy_mat = (float)((float)min((int)(abs(intersection_point.z) * 3), 1) * sign(intersection_point.z)) + 1;
@@ -191,18 +214,42 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
                     if(abs(intersection_point.x) > 1 || abs(intersection_point.z) > 1 || positionsMatrix[posx_mat][posy_mat] == true) return;
                     else if (positionsMatrix[posx_mat][posy_mat] == false) positionsMatrix[posx_mat][posy_mat] = true; // set the position to placed
 
-                    float posx_space = (posx_mat - 1.0f) * 2/3;
-                    float posy_space = (posy_mat - 1.0f) * 2/3;
+                float posx_space = (posx_mat - 1.0f) * 2/3;
+                float posy_space = (posy_mat - 1.0f) * 2/3;
 
-                    model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(posx_space, -1.0, posy_space)), glm::vec3(0.25)));
-                    renderList.push_back(model);
-                } else {
-                    std::cout << "L'intersection est derrière la caméra." << std::endl;
-                }
+                model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(posx_space, -1.0, posy_space)), glm::vec3(0.25)));
+                renderList.push_back(model);
+                types.push_back(renderList.size() % 2 == 0 ? 1 : 2);
+            } else {
+                std::cout << "L'intersection est derrière la caméra." << std::endl;
             }
-            
         }
     }
+
+    // check if a line of 3 is reached
+    for (int i = 0; i < 3; ++i) {
+        // Check rows
+        if (positionsMatrix[i][0] != 0 && positionsMatrix[i][0] == positionsMatrix[i][1] && positionsMatrix[i][1] == positionsMatrix[i][2]) {
+            std::cout << "Player " << positionsMatrix[i][0] << " wins!" << std::endl;
+            won({{i, 0}, {i, 1}, {i, 2}}, positionsMatrix[i][0]);
+        }
+        // Check columns
+        if (positionsMatrix[0][i] != 0 && positionsMatrix[0][i] == positionsMatrix[1][i] && positionsMatrix[1][i] == positionsMatrix[2][i]) {
+            std::cout << "Player " << positionsMatrix[0][i] << " wins!" << std::endl;
+            won({{0, i}, {1, i}, {2, i}}, positionsMatrix[0][i]);
+        }
+    }
+
+    // Check diagonals
+    if (positionsMatrix[0][0] != 0 && positionsMatrix[0][0] == positionsMatrix[1][1] && positionsMatrix[1][1] == positionsMatrix[2][2]) {
+        std::cout << "Player " << positionsMatrix[0][0] << " wins!" << std::endl;
+        won({{0, 0}, {1, 1}, {2, 2}}, positionsMatrix[0][0]);
+    }
+    if (positionsMatrix[0][2] != 0 && positionsMatrix[0][2] == positionsMatrix[1][1] && positionsMatrix[1][1] == positionsMatrix[2][0]) {
+        std::cout << "Player " << positionsMatrix[0][2] << " wins!" << std::endl;
+        won({{0, 2}, {1, 1}, {2, 0}}, positionsMatrix[0][2]);
+    }
+}
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
