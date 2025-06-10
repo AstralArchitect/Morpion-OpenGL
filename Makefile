@@ -26,3 +26,7 @@ endif
 
 resetup: clean setup
 resetupGcc: clean setupGcc
+
+build_release:
+	meson setup release -Dbuildtype=release --reconfigure
+	meson compile -C release
