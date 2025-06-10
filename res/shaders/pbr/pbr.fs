@@ -21,7 +21,7 @@ uniform sampler2D tex;
 #else
 uniform vec3 base_color;
 uniform vec3 override_color;
-uniform bool override;
+uniform int override;
 #endif
 
 uniform sampler2D shadowMap;
@@ -89,7 +89,7 @@ void main() {
 #ifdef HAS_BASE_COLOR_TEX
     vec3 color = texture(tex, fs_in.TexCoords).rgb;
 #else
-    vec3 color = override ? override_color : base_color;
+    vec3 color = override == 1 ? override_color : base_color;
 #endif
 
     // ambient

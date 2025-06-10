@@ -9,6 +9,8 @@
 
 #include "render.hpp"
 
+#include <mutex>
+
 // settings
 extern unsigned int SCR_WIDTH;
 extern unsigned int SCR_HEIGHT;
@@ -31,6 +33,11 @@ glm::mat4 projection;
 glm::mat4 view;
 glm::mat4 model;
 
+extern std::mutex mtx;
+extern std::vector<int> winIndexes;
+
+extern bool won_flag;
+
 // render list
 extern std::vector<GltfModel> renderList;
 
@@ -46,21 +53,48 @@ void Render::renderFrame(GLFWwindow *window, glm::mat4 lightSpaceMatrix, GLuint 
 
     // uniforms
     // -------
+    mtx.lock();
     for (auto &model : renderList)
         model.set_global_uniforms([&] (Shader* shader) {
             shader->use();
             shader->setVec3("viewPos", camera.Position);
             shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
         }, view, projection);
-    
+    mtx.unlock();
     // draw
     // ----
-    for (auto &model : renderList)
+    mtx.lock();
+    for (int i = 0; i < renderList.size(); ++i) {
+        auto &model = renderList[i];
+
+        // Determine if the current model's index 'i' is in the list of winning indexes
+        bool is_winning_piece = false;
+        for (int winning_index : winIndexes) {
+            if (winning_index == i) {
+                is_winning_piece = true;
+                break; // Found a match, no need to search further
+            }
+        }
+
+        if (is_winning_piece) model.set_global_uniforms([&] (Shader* shader) {
+                shader->use();
+                shader->setVec3("override_color", glm::vec3(.0f, 1.f, .0f));
+                shader->setInt("override", 1);
+            });
+        else model.set_global_uniforms([&] (Shader* shader) {
+                shader->use();
+                shader->setInt("override", 0);
+            });
+
         model.draw();
+    }
+    mtx.unlock();
 }
 
 void Render::renderDepthFrame(GLFWwindow *window, glm::mat4 const& lightSpaceMatrix)
 {
+    mtx.lock();
     for(auto &model : renderList)
         model.draw(lightSpaceMatrix);
+    mtx.unlock();
 }

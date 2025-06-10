@@ -39,6 +39,8 @@ glm::vec3 backgroundColor(.5f);
 std::vector<GltfModel> renderList;
 std::vector<GltfModel> loadedModels;
 
+extern bool won_flag;
+
 int main()
 {
     // glfw window creation
@@ -85,8 +87,9 @@ int main()
             shader->use();
             shader->setVec3("lightPos", lightPos);
             shader->setVec3("ambientColor", backgroundColor);
-            shader->setVec3("override_color", .0f, 1.f, .0f);
             shader->setInt("shadowMap", 4);
+            shader->setInt("override", 0);
+            shader->setVec3("override_color", glm::vec3(.0f, 1.f, .0f));
         });
 
     // add plateau to render list render list

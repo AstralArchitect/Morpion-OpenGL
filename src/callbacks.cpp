@@ -9,6 +9,8 @@
 
 #include <stb_image.h>
 #include <iostream>
+#include <thread>
+#include <mutex>
 
 extern Camera camera;
 
@@ -31,11 +33,16 @@ std::vector<int> types = {0};
 extern std::vector<GltfModel> renderList;
 extern std::vector<GltfModel> loadedModels;
 
-unsigned int positionsMatrix[3][3] = 
+std::mutex mtx; // mutex for critical section
+
+bool won_flag = false;
+std::vector<int> winIndexes;
+
+std::pair<int, int> positionsMatrix[3][3] = 
 {
-    {0, 0, 0},
-    {0, 0, 0},
-    {0, 0, 0}
+    {{0, 0}, {0, 0}, {0, 0}},
+    {{0, 0}, {0, 0}, {0, 0}},
+    {{0, 0}, {0, 0}, {0, 0}}
 };
 
 #ifdef _WIN32
@@ -137,24 +144,22 @@ void Callback::mouse(GLFWwindow * window, double xposIn, double yposIn) {
 
 void won(std::vector<std::pair<int, int>> pos, int winner)
 {
-    for (int i = 1; i < renderList.size(); ++i)
-    {
-        if(types[i] == winner) renderList[i].set_global_uniforms([&] (Shader* shader) {
-            shader->use();
-            shader->setInt("override", true);
-            shader->setVec3("override_color", glm::vec3(.0f, 1.0f, 0.0f));
-        });
+    std::vector<int> lWinIndexes;
+    for(auto &i : pos) {
+        lWinIndexes.push_back(positionsMatrix[i.first][i.second].second);
     }
+    winIndexes = lWinIndexes;
+    won_flag = true;
     sleep_ms(1000);
+    mtx.lock();
     renderList.clear();
     renderList.push_back(loadedModels[0]);
     types.clear();
     types.push_back(0);
     memset(positionsMatrix, 0, sizeof(positionsMatrix));
-    renderList[0].set_global_uniforms([&] (Shader* shader) {
-        shader->use();
-        shader->setInt("override", false);
-    });
+    mtx.unlock();
+    won_flag = false;
+    winIndexes.clear();
 }
 
 void Callback::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -208,11 +213,14 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
                 // create a copy of the model
                 GltfModel model = renderList.size() % 2 == 0 ? loadedModels[1] : loadedModels[2];
                     
-                    int posx_mat = (float)((float)min((int)(abs(intersection_point.x) * 3), 1) * sign(intersection_point.x)) + 1;
-                    int posy_mat = (float)((float)min((int)(abs(intersection_point.z) * 3), 1) * sign(intersection_point.z)) + 1;
-                    
-                    if(abs(intersection_point.x) > 1 || abs(intersection_point.z) > 1 || positionsMatrix[posx_mat][posy_mat] == true) return;
-                    else if (positionsMatrix[posx_mat][posy_mat] == false) positionsMatrix[posx_mat][posy_mat] = true; // set the position to placed
+                int posx_mat = (float)((float)min((int)(abs(intersection_point.x) * 3), 1) * sign(intersection_point.x)) + 1;
+                int posy_mat = (float)((float)min((int)(abs(intersection_point.z) * 3), 1) * sign(intersection_point.z)) + 1;
+                
+                if(abs(intersection_point.x) > 1 || abs(intersection_point.z) > 1 || positionsMatrix[posx_mat][posy_mat].first == 1 || positionsMatrix[posx_mat][posy_mat].first == 2) return;
+                else if (positionsMatrix[posx_mat][posy_mat].first == 0) {
+                    positionsMatrix[posx_mat][posy_mat].first = renderList.size() % 2 == 0 ? 1 : 2;
+                    positionsMatrix[posx_mat][posy_mat].second = renderList.size();
+                }
 
                 float posx_space = (posx_mat - 1.0f) * 2/3;
                 float posy_space = (posy_mat - 1.0f) * 2/3;
@@ -220,34 +228,58 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
                 model.set_global_uniforms(glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(posx_space, -1.0, posy_space)), glm::vec3(0.25)));
                 renderList.push_back(model);
                 types.push_back(renderList.size() % 2 == 0 ? 1 : 2);
+
+                // check if a line of 3 is reached
+                for (int i = 0; i < 3; ++i) {
+                    // Check rows
+                    if (positionsMatrix[i][0].first != 0 && positionsMatrix[i][0].first == positionsMatrix[i][1].first && positionsMatrix[i][1].first == positionsMatrix[i][2].first) {
+                        std::cout << "Player " << positionsMatrix[i][0].first << " wins!" << std::endl;
+                        std::vector<std::pair<int, int>> pos = {{i, 0}, {i, 1}, {i, 2}};
+                        try {
+                            std::thread t(won, pos, positionsMatrix[i][0].first);
+                            t.detach();
+                        } catch (std::exception& e) {
+                            std::cout << "Exception caught: " << e.what() << std::endl;
+                        }
+                    }
+                    // Check columns
+                    if (positionsMatrix[0][i].first != 0 && positionsMatrix[0][i].first == positionsMatrix[1][i].first && positionsMatrix[1][i].first == positionsMatrix[2][i].first) {
+                        std::cout << "Player " << positionsMatrix[0][i].first << " wins!" << std::endl;
+                        std::vector<std::pair<int, int>> pos = {{0, i}, {1, i}, {2, i}};
+                        try {
+                            std::thread t(won, pos, positionsMatrix[0][i].first);
+                            t.detach();
+                        } catch (std::exception& e) {
+                            std::cout << "Exception caught: " << e.what() << std::endl;
+                        }
+                    }
+                }
+            
+                // Check diagonals
+                if (positionsMatrix[0][0].first != 0 && positionsMatrix[0][0].first == positionsMatrix[1][1].first && positionsMatrix[1][1].first == positionsMatrix[2][2].first) {
+                    std::cout << "Player " << positionsMatrix[0][0].first << " wins!" << std::endl;
+                    std::vector<std::pair<int, int>> pos = {{0, 0}, {1, 1}, {2, 2}};
+                    try {
+                        std::thread t(won, pos, positionsMatrix[0][0].first);
+                        t.detach();
+                    } catch (std::exception& e) {
+                        std::cout << "Exception caught: " << e.what() << std::endl;
+                    }
+                }
+                if (positionsMatrix[0][2].first != 0 && positionsMatrix[0][2].first == positionsMatrix[1][1].first && positionsMatrix[1][1].first == positionsMatrix[2][0].first) {
+                    std::cout << "Player " << positionsMatrix[0][2].first << " wins!" << std::endl;
+                    std::vector<std::pair<int, int>> pos = {{0, 2}, {1, 1}, {2, 0}};
+                    try {
+                        std::thread t(won, pos, positionsMatrix[0][2].first);
+                        t.detach();
+                    } catch (std::exception& e) {
+                        std::cout << "Exception caught: " << e.what() << std::endl;
+                    }
+                }
             } else {
                 std::cout << "L'intersection est derrière la caméra." << std::endl;
             }
         }
-    }
-
-    // check if a line of 3 is reached
-    for (int i = 0; i < 3; ++i) {
-        // Check rows
-        if (positionsMatrix[i][0] != 0 && positionsMatrix[i][0] == positionsMatrix[i][1] && positionsMatrix[i][1] == positionsMatrix[i][2]) {
-            std::cout << "Player " << positionsMatrix[i][0] << " wins!" << std::endl;
-            won({{i, 0}, {i, 1}, {i, 2}}, positionsMatrix[i][0]);
-        }
-        // Check columns
-        if (positionsMatrix[0][i] != 0 && positionsMatrix[0][i] == positionsMatrix[1][i] && positionsMatrix[1][i] == positionsMatrix[2][i]) {
-            std::cout << "Player " << positionsMatrix[0][i] << " wins!" << std::endl;
-            won({{0, i}, {1, i}, {2, i}}, positionsMatrix[0][i]);
-        }
-    }
-
-    // Check diagonals
-    if (positionsMatrix[0][0] != 0 && positionsMatrix[0][0] == positionsMatrix[1][1] && positionsMatrix[1][1] == positionsMatrix[2][2]) {
-        std::cout << "Player " << positionsMatrix[0][0] << " wins!" << std::endl;
-        won({{0, 0}, {1, 1}, {2, 2}}, positionsMatrix[0][0]);
-    }
-    if (positionsMatrix[0][2] != 0 && positionsMatrix[0][2] == positionsMatrix[1][1] && positionsMatrix[1][1] == positionsMatrix[2][0]) {
-        std::cout << "Player " << positionsMatrix[0][2] << " wins!" << std::endl;
-        won({{0, 2}, {1, 1}, {2, 0}}, positionsMatrix[0][2]);
     }
 }
 
