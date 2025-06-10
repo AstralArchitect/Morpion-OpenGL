@@ -162,6 +162,18 @@ void won(std::vector<std::pair<int, int>> pos, int winner)
     winIndexes.clear();
 }
 
+void reset_game()
+{
+    sleep_ms(1000);
+    mtx.lock();
+    renderList.clear();
+    renderList.push_back(loadedModels[0]);
+    types.clear();
+    types.push_back(0);
+    memset(positionsMatrix, 0, sizeof(positionsMatrix));
+    mtx.unlock();
+}
+
 void Callback::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     // Nous voulons seulement réagir à un clic gauche (bouton 0)
@@ -271,6 +283,16 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
                     std::vector<std::pair<int, int>> pos = {{0, 2}, {1, 1}, {2, 0}};
                     try {
                         std::thread t(won, pos, positionsMatrix[0][2].first);
+                        t.detach();
+                    } catch (std::exception& e) {
+                        std::cout << "Exception caught: " << e.what() << std::endl;
+                    }
+                }
+
+                // check if the board is full
+                if (renderList.size() == 10) {
+                    try {
+                        std::thread t(reset_game);
                         t.detach();
                     } catch (std::exception& e) {
                         std::cout << "Exception caught: " << e.what() << std::endl;
