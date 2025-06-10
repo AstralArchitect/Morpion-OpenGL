@@ -20,9 +20,10 @@ in VS_OUT {
 uniform sampler2D tex;
 #else
 uniform vec3 base_color;
+#endif
+
 uniform vec3 override_color;
 uniform int override;
-#endif
 
 uniform sampler2D shadowMap;
 uniform vec3 lightPos;
@@ -89,8 +90,13 @@ void main() {
 #ifdef HAS_BASE_COLOR_TEX
     vec3 color = texture(tex, fs_in.TexCoords).rgb;
 #else
-    vec3 color = override == 1 ? override_color : base_color;
+    vec3 color = base_color;
 #endif
+
+    if (override == 1)
+    {
+        color = override_color;
+    }
 
     // ambient
     vec3 ambient = ambientColor * color;
