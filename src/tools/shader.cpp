@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iostream>
 #include <map>
+#include <algorithm>
 
 // utility function for checking shader compilation/linking errors.
 // ------------------------------------------------------------------------

@@ -31,7 +31,6 @@ extern glm::vec3 backgroundColor;
 // model, view and projection matrix
 glm::mat4 projection;
 glm::mat4 view;
-glm::mat4 model;
 
 extern std::mutex mtx;
 extern std::vector<int> winIndexes;
@@ -40,6 +39,8 @@ extern bool won_flag;
 
 // render list
 extern std::vector<GltfModel> renderList;
+
+extern std::pair<int, glm::mat4> movment_matrix;
 
 void Render::renderFrame(GLFWwindow *window, glm::mat4 lightSpaceMatrix, GLuint depthMap)
 {
@@ -85,6 +86,10 @@ void Render::renderFrame(GLFWwindow *window, glm::mat4 lightSpaceMatrix, GLuint 
                 shader->use();
                 shader->setInt("override", 0);
             });
+
+        if (i == movment_matrix.first){
+            model.set_global_uniforms(movment_matrix.second);
+        }
 
         model.draw();
     }

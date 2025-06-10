@@ -88,8 +88,6 @@ int main()
             shader->setVec3("lightPos", lightPos);
             shader->setVec3("ambientColor", backgroundColor);
             shader->setInt("shadowMap", 4);
-            shader->setInt("override", 0);
-            shader->setVec3("override_color", glm::vec3(.0f, 1.f, .0f));
         });
 
     // add plateau to render list render list
