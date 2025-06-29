@@ -191,7 +191,7 @@ inline void GltfNode::set_node_uniforms(const mat4& model_transform) {
 }
 
 glm::mat4 GltfNode::get_model_transform() {
-    return children[0].get_model_transform();
+    return mesh.has_value() ? mesh.value().get_model_transform() : mat4(1.0f);
 }
 
 GltfMesh::GltfMesh(tinygltf::Model& root, tinygltf::Mesh mesh, ShaderStore& shader_store, int emmission) {

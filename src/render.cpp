@@ -40,7 +40,9 @@ extern bool won_flag;
 // render list
 extern std::vector<GltfModel> renderList;
 
-extern std::pair<int, glm::mat4> movment_matrix;
+extern int movment_index;
+
+void sleep_ms(unsigned long milliseconds);
 
 void Render::renderFrame(GLFWwindow *window, glm::mat4 lightSpaceMatrix, GLuint depthMap)
 {
@@ -87,8 +89,27 @@ void Render::renderFrame(GLFWwindow *window, glm::mat4 lightSpaceMatrix, GLuint 
                 shader->setInt("override", 0);
             });
 
-        if (i == movment_matrix.first){
-            model.set_global_uniforms(movment_matrix.second);
+        if (i == movment_index){
+            static float first_time = 0;
+            static glm::mat4 initial_model = model.get_model_transform();
+            // calculate the z pos, which must be a map between the first_time, actual_time and 1.0f, 0.0f
+            first_time = first_time == 0 ? glfwGetTime() : first_time; // Initialize with current time on the first call
+            float duration = .5f; // Animation duration in seconds (adjust as needed)
+            float elapsedTime = glfwGetTime() - first_time;
+
+            // Calculate animation progress (clamped between 0 and 1)
+            float progress = glm::clamp(elapsedTime / duration, 0.0f, 1.0f);
+            if (progress >= 1.0f) 
+            {
+                movment_index = -1;
+                first_time = 0.f;
+            }
+
+            // Map progress (0 to 1) to z_pos (1.0 to 0.0)
+            float y_pos = 1.0f - progress;
+
+            // Update the global movement matrix
+            model.set_global_uniforms(glm::translate(initial_model, glm::vec3(0.0f, y_pos, 0.0f)));
         }
 
         model.draw();

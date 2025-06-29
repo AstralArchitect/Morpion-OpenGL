@@ -37,7 +37,7 @@ std::mutex mtx; // mutex for critical section
 bool won_flag = false;
 std::vector<int> winIndexes;
 
-std::pair<int, glm::mat4> movment_matrix = {-1, glm::mat4(1.f)};
+int movment_index = -1;
 
 std::pair<int, int> positionsMatrix[3][3] = 
 {
@@ -175,34 +175,6 @@ void reset_game()
     mtx.unlock();
 }
 
-void animateObj(float first_time, glm::mat4 const& initial_model_mat) {
-    while (true)
-    {
-        // calculate the z pos, which must be a map between the first_time, actual_time and 1.0f, 0.0f
-        float currentTime = static_cast<float>(glfwGetTime());
-        float duration = .5f; // Animation duration in seconds (adjust as needed)
-        float elapsedTime = currentTime - first_time;
-
-        // Calculate animation progress (clamped between 0 and 1)
-        float progress = glm::clamp(elapsedTime / duration, 0.0f, 1.0f);
-
-        // Map progress (0 to 1) to z_pos (1.0 to 0.0)
-        float y_pos = 1.0f - progress;
-
-        // Update the global movement matrix
-        movment_matrix.second = glm::translate(initial_model_mat, glm::vec3(0.0f, y_pos, 0.0f));
-        if (y_pos <= 0.0f) 
-        {
-            movment_matrix.second = initial_model_mat;
-            sleep_ms((2.f/60.f) * 1000);
-            break;
-        }
-        sleep_ms((1.f/60.f) * 1000);
-    }
-    movment_matrix.first = -1;
-    movment_matrix.second = glm::mat4(1.f);
-}
-
 void Callback::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     // Nous voulons seulement réagir à un clic gauche (bouton 0)
@@ -268,9 +240,7 @@ void Callback::mouse_button_callback(GLFWwindow* window, int button, int action,
 
                 glm::mat4 model_mat = glm::scale(glm::translate(glm::mat4(1.f), glm::vec3(posx_space, -1.0, posy_space)), glm::vec3(0.25));
                 model.set_global_uniforms(model_mat);
-                std::thread t(animateObj, static_cast<float>(glfwGetTime()), model_mat);
-                t.detach();
-                movment_matrix.first = renderList.size();
+                movment_index = renderList.size();
                 renderList.push_back(model);
                 types.push_back(renderList.size() % 2 == 0 ? 1 : 2);
 
