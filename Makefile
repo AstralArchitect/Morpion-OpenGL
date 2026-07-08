@@ -4,15 +4,9 @@ all:
 
 # Target to run the compiled binary
 run: all
-ifeq ($(OS),Windows_NT)
-	.\addToPathAndRun.bat
-else
 	./build/main
-endif
 
 # Target to set up the build directory
-setupClang:
-	meson setup build --native-file=native-clang.txt
 setup:
 	meson setup build
 
@@ -25,7 +19,6 @@ else
 endif
 
 resetup: clean setup
-resetupGcc: clean setupGcc
 
 build_release:
 	meson setup release -Dbuildtype=release --reconfigure

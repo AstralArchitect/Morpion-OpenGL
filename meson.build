@@ -1,4 +1,4 @@
-project('Morpion-OpenGL', 'c', 'cpp', version : 'pre-release', default_options: ['cpp_std=c++20'])
+project('Morpion-OpenGL', 'c', 'cpp', version : 'pre-release', default_options: ['cpp_std=c++20', 'default_library=static'])
 
 cpp_compiler = meson.get_compiler('cpp')
 if cpp_compiler.get_id() == 'gcc'
